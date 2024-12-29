@@ -1,7 +1,7 @@
 import java.util.HashMap;
 import java.util.Map;
 
-public class KotlinInterpreter {
+public class KotlinInterpreter2 {
 
     private Map<String, Integer> variables = new HashMap<>();
 
@@ -34,18 +34,56 @@ public class KotlinInterpreter {
         String varName = parts[0].trim();
         String expression = parts[1].trim();
 
-        // Split expression by '+'
-        String[] numbers = expression.split("\\+");
-        if (numbers.length != 2) {
+        // Detect operator and operands
+        char operator = ' ';
+        if (expression.contains("+")) operator = '+';
+        else if (expression.contains("-")) operator = '-';
+        else if (expression.contains("*")) operator = '*';
+        else if (expression.contains("/")) operator = '/';
+        else if (expression.contains("%")) operator = '%';
+        else {
+            System.out.println("Something went wrong.");
+            return;
+        }
+
+        String[] operands = expression.split("\\" + operator);
+        if (operands.length != 2) {
             System.out.println("Something went wrong.");
             return;
         }
 
         try {
-            // Convert both numbers and add them
-            int num1 = Integer.parseInt(numbers[0].trim());
-            int num2 = Integer.parseInt(numbers[1].trim());
-            int result = num1 + num2;
+            int num1 = Integer.parseInt(operands[0].trim());
+            int num2 = Integer.parseInt(operands[1].trim());
+            int result = 0;
+
+            // Perform the operation
+            switch (operator) {
+                case '+':
+                    result = num1 + num2;
+                    break;
+                case '-':
+                    result = num1 - num2;
+                    break;
+                case '*':
+                    result = num1 * num2;
+                    break;
+                case '/':
+                    if (num2 == 0) {
+                        System.out.println("Division by zero is not allowed.");
+                        return;
+                    }
+                    result = num1 / num2;
+                    break;
+                case '%':
+                    if (num2 == 0) {
+                        System.out.println("Modulo by zero is not allowed.");
+                        return;
+                    }
+                    result = num1 % num2;
+                    break;
+            }
+
             variables.put(varName, result);
         } catch (NumberFormatException e) {
             System.out.println("Something went wrong.");
@@ -63,14 +101,23 @@ public class KotlinInterpreter {
     }
 
     public static void main(String[] args) {
-        KotlinInterpreter interpreter = new KotlinInterpreter();
+        KotlinInterpreter2 interpreter = new KotlinInterpreter2();
 
         String program = """
             val sum = 10 + 20;
             println(sum);
+            val difference = 50 - 30;
+            println(difference);
+            val product = 5 * 6;
+            println(product);
+            val quotient = 40 / 8;
+            println(quotient);
+            val remainder = 43 % 5;
+            println(remainder);
         """;
 
         interpreter.eval(program);
     }
 }
+
 
