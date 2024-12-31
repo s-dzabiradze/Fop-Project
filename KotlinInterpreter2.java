@@ -11,34 +11,52 @@ public class KotlinInterpreter2 {
             line = line.trim();
             if (line.isEmpty()) continue;
 
-            // Handle variable assignment
-            if (line.startsWith("val")) {
+            if (line.startsWith("val") || line.contains("=")) {
                 handleAssignment(line);
             } else if (line.startsWith("println")) {
                 handlePrint(line);
+            } else if (line.startsWith("while")) {
+                handleWhileLoop(code.substring(code.indexOf(line)));
+                break;
             } else if (line.startsWith("if")) {
                 handleIfElse(code.substring(code.indexOf(line)));
                 break;
             }
         }
     }
+
     private void handleAssignment(String line) {
-        // Remove 'val' and any extra spaces
-        String[] parts = line.replace("val", "").split("=");
+        boolean isDeclaration = line.startsWith("val");
+        String[] parts = isDeclaration ? line.replace("val", "").split("=") : line.split("=");
+
         if (parts.length != 2) {
             System.out.println("Invalid assignment statement");
             return;
         }
+
         String varName = parts[0].trim();
         String expression = parts[1].trim();
 
         int result = evaluateExpression(expression);
 
-        variables.put(varName, result);
+        if (isDeclaration) {
+            if (variables.containsKey(varName)) {
+                System.out.println("Variable already defined: " + varName);
+            } else {
+                variables.put(varName, result);
+            }
+        } else {
+            if (!variables.containsKey(varName)) {
+                System.out.println("Undefined variable: " + varName);
+            } else {
+                variables.put(varName, result);
+            }
+        }
     }
+
     private int evaluateExpression(String expression) {
         expression = expression.trim();
-        
+
         char operator = ' ';
         if (expression.contains("+")) operator = '+';
         else if (expression.contains("-")) operator = '-';
@@ -46,20 +64,18 @@ public class KotlinInterpreter2 {
         else if (expression.contains("/")) operator = '/';
         else if (expression.contains("%")) operator = '%';
 
-        // If there's no operator, it's just a value 
         if (operator == ' ') {
             return getValue(expression);
         }
-        // Split the operands based on the operator
+
         String[] operands = expression.split("\\" + operator);
         if (operands.length != 2) {
             System.out.println("Invalid arithmetic expression.");
-            return 0; // Return default value
+            return 0;
         }
         int num1 = getValue(operands[0].trim());
         int num2 = getValue(operands[1].trim());
 
-        // Perform the arithmetic operation
         switch (operator) {
             case '+': return num1 + num2;
             case '-': return num1 - num2;
@@ -67,19 +83,20 @@ public class KotlinInterpreter2 {
             case '/':
                 if (num2 == 0) {
                     System.out.println("Division by zero is not allowed.");
-                    return 0; // Return default value
+                    return 0;
                 }
                 return num1 / num2;
             case '%':
                 if (num2 == 0) {
                     System.out.println("Modulo by zero is not allowed.");
-                    return 0; // Return default value
+                    return 0;
                 }
                 return num1 % num2;
         }
 
-        return 0; 
+        return 0;
     }
+
     private int getValue(String operand) {
         if (variables.containsKey(operand)) {
             return variables.get(operand);
@@ -88,9 +105,10 @@ public class KotlinInterpreter2 {
             return Integer.parseInt(operand);
         } catch (NumberFormatException e) {
             System.out.println("Invalid operand: " + operand);
-            return 0; 
+            return 0;
         }
     }
+
     private void handlePrint(String line) {
         String varName = line.substring(line.indexOf('(') + 1, line.indexOf(')')).trim();
         if (!variables.containsKey(varName)) {
@@ -99,6 +117,7 @@ public class KotlinInterpreter2 {
             System.out.println(variables.get(varName));
         }
     }
+
     private void handleIfElse(String code) {
         try {
             int conditionStart = code.indexOf('(') + 1;
@@ -151,6 +170,7 @@ public class KotlinInterpreter2 {
         }
         return code.substring(startIndex + 1, closeIndex).trim();
     }
+
     private boolean evaluateCondition(String condition) {
         condition = condition.trim();
 
@@ -178,19 +198,149 @@ public class KotlinInterpreter2 {
         }
         throw new IllegalArgumentException("Something Went Wrong");
     }
+
+    private void handleWhileLoop(String code) {
+        try {
+            int conditionStart = code.indexOf('(') + 1;
+            int conditionEnd = code.indexOf(')');
+            if (conditionStart == 0 || conditionEnd == -1) {
+                throw new IllegalArgumentException("Malformed or missing condition in while statement");
+            }
+            String condition = code.substring(conditionStart, conditionEnd).trim();
+
+            String loopBody = extractBlock(code, code.indexOf('{'));
+
+            while (evaluateCondition(condition)) {
+                eval(loopBody);
+            }
+        } catch (Exception e) {
+            System.out.println("Error in while loop handling: " + e.getMessage());
+        }
+    }
+
     public static void main(String[] args) {
         KotlinInterpreter2 interpreter = new KotlinInterpreter2();
-        String program = """
-            val sum = 10 + 20
-            val num = 5
-            if (sum == 30) {
-                println(sum)
-            } else {
-                println(num)
-            }
+        String algorithm1 = """
+        val n = 10
+        val sum = 0
+        while(n > 0) {
+        sum = sum + n
+        n = n - 1
+        println(sum)
+        }
         """;
-        interpreter.eval(program);
+        String algorithm2 = """
+                val n = 5
+                val factorial = 1
+                while(n > 1) {
+                factorial = factorial * n
+                n = n - 1
+                println(factorial)
+                }
+                """;
+        String algorithm3 = """
+                val a = 48
+                val b = 18
+                val temp = 0
+                while (b > 0) {
+                temp = b
+                b = a % b
+                a = temp
+                println(a)
+                }
+                """;
+        String algorithm4 = """
+                val number = 1234
+                val reverse = 0
+                val reminder = 0
+                val multiplied = 0
+                while (number > 0) {
+                reminder = number % 10
+                multiplied = reverse * 10
+                reverse = multiplied + reminder
+                number = number / 10
+                println(reverse)
+                }
+                """;
+        String algorithm5 = """
+                val n = 13
+                val isPrime = 1
+                val i = 2
+                val iSquare = 4
+                while (iSquare <= n) {
+                if (n % i == 0) {
+                val isPrime = 0
+                break
+                }
+                i = i + 1
+                iSquare = i * i
+                println(isPrime)
+                }
+                """;
+        String algorithm6 = """
+                val number = 121
+                val original = number
+                val reverse = 0
+                val reminder = 0
+                val multiplication = 0
+                while (number > 0) {
+                multiplication = reverse * 10
+                remainder = number % 10
+                reverse = multiplication + remainder
+                number = number / 10
+                println(original == reverse)
+                }
+                """;
+        String algorithm7 = """
+                val number = 3947
+                val largest = 0
+                val digit = 0
+                while (number > 0) {
+                digit = number % 10
+                if (digit > largest) {
+                largest = digit
+                }
+                number = number / 10
+                }
+                println(largest)
+                """;
+        String algorithm8 = """
+                val number = 1234
+                val sum = 0
+                val reminder = 0
+                while (number > 0) {
+                reminder = number % 10
+                sum = sum + reminder
+                number = number / 10
+                println(sum)
+                }
+                """;
+        String algorithm9 = """
+                val n = 5
+                val i = 1
+                val mult = 0
+                while (i < 11) {
+                mult = n * i
+                println(mult)
+                i = i + 1
+                }
+                """;
+        String algorithm10 = """
+                val n = 10
+                val a = 1
+                val b = 1
+                val count = 2
+                val temp = 0
+                val tempn = 0
+                while (count < tempn) {
+                temp = b
+                b = a + b
+                println(b)
+                a = temp
+                count = count + 1
+                tempn = n + 1
+                }
+                """;
+        interpreter.eval(algorithm1);
     }
 }
-
-
